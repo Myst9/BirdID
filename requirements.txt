@@ -1,6 +1,6 @@
 ﻿Flask~=2.2.5
 keras~=2.11.0
 tensorflow~=2.11.0
-numpy~=1.23.5
+numpy~=1.21.6
 werkzeug
 gevent~=22.10.2

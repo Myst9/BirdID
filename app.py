@@ -1,60 +1,25 @@
-# import os
-# import sys
-
-# Flask
-from flask import Flask, redirect, url_for, request, render_template, Response, jsonify
-from werkzeug.utils import secure_filename
+from flask import Flask, request, render_template, jsonify
 from gevent.pywsgi import WSGIServer
-
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing import image
-
-# Some utilites
 import numpy as np
 from util import base64_to_pil
 
 
-# Declare a flask app
 app = Flask(__name__)
 
-
-# Model saved with Keras model.save()
 MODEL_PATH = 'L1L2_model.keras'
-
-# Load your own trained model
 model = load_model(MODEL_PATH)
-print('Model loaded. Start serving...')
+print('Model loaded. Starting server...')
 
 
 def model_predict(img, model):
     img = img.resize((180, 180))
-
-    # Preprocessing the image
     x = image.img_to_array(img)
     x = np.expand_dims(x, axis=0)
     preds = model.predict(x)
 
-    return preds
-
-
-@app.route('/', methods=['GET'])
-def index():
-    # Main page
-    return render_template('index.html')
-
-
-@app.route('/predict', methods=['GET', 'POST'])
-def predict():
-    if request.method == 'POST':
-        # Get the image from post request
-        img = base64_to_pil(request.json)
-
-        # Save the image to ./uploads
-        # img.save("./uploads/image.png")
-
-        # Make prediction
-        preds = model_predict(img, model)
-        classes = {
+    classes = {
             0: 'Asian-Green-Bee-Eater',
             1: 'Brown-Headed-Barbet',
             2: 'Cattle-Egret',
@@ -81,24 +46,33 @@ def predict():
             23: 'White-Breasted-Waterhen',
             24: 'White-Wagtail',
         }
-        predicted_class_index = np.argmax(preds)
-        # print(classes[predicted_class_index])
+    
+    predicted_class_index = np.argmax(preds)
+    result = classes[predicted_class_index]
 
-        # Process your result for human
-        pred_proba = "{:.3f}".format(np.amax(preds))    # Max probability
+    return (preds, result)
 
-        result = classes[predicted_class_index]
+@app.route('/', methods=['GET'])
+def index():
+    return render_template('index.html')
+
+@app.route('/predict', methods=['GET', 'POST'])
+def predict():
+    if request.method == 'POST':
+        # Get the image from post request
+        img = base64_to_pil(request.json)
         
-        # # Serialize the result, you can add additional fields
-        return jsonify(result=result, probability=pred_proba)
+        # Make prediction
+        prediction = model_predict(img, model)
+        pred = prediction[0]
+        result = prediction[1]
+        pred_probability = "{:.3f}".format(np.amax(pred)) 
+        
+        return jsonify(result=result, probability=pred_probability)
 
     return None
 
 
 if __name__ == '__main__':
-    # app.run(port=5002, threaded=False)
-
-    # Serve the app with gevent
     http_server = WSGIServer(('0.0.0.0', 5000), app)
     http_server.serve_forever()
-    # app.run(host='0.0.0.0', port=5000)

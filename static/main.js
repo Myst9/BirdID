@@ -1,18 +1,12 @@
-//========================================================================
-// Drag and drop image handling
-//========================================================================
-
 var fileDrag = document.getElementById("file-drag");
 var fileSelect = document.getElementById("file-upload");
 
-// Add event listeners
 fileDrag.addEventListener("dragover", fileDragHover, false);
 fileDrag.addEventListener("dragleave", fileDragHover, false);
 fileDrag.addEventListener("drop", fileSelectHandler, false);
 fileSelect.addEventListener("change", fileSelectHandler, false);
 
 function fileDragHover(e) {
-  // prevent default behaviour
   e.preventDefault();
   e.stopPropagation();
 
@@ -28,80 +22,82 @@ function fileSelectHandler(e) {
   }
 }
 
-//========================================================================
-// Web page elements for functions to use
-//========================================================================
-
 var imagePreview = document.getElementById("image-preview");
-var imageDisplay = document.getElementById("image-display");
 var uploadCaption = document.getElementById("upload-caption");
 var predResult = document.getElementById("pred-result");
 var loader = document.getElementById("loader");
 
-//========================================================================
-// Main button events
-//========================================================================
+function getMimeType(src) {
+  // Get the MIME type of the image based on its extension
+  var extension = src.substring(src.lastIndexOf('.') + 1).toLowerCase();
+  switch (extension) {
+    case 'png':
+      return 'image/png';
+    case 'gif':
+      return 'image/gif';
+    case 'jpeg':
+    case 'jpg':
+      return 'image/jpeg';
+    default:
+      return 'image/jpeg'; // default to JPEG
+  }
+}
 
 function submitImage() {
-  // action for the submit button
-  console.log("submit");
+  //Submit Image
+  console.log("Submit");
 
-  if (!imageDisplay.src || !imageDisplay.src.startsWith("data")) {
+  if (!imagePreview.src) {
     window.alert("Please select an image before submit.");
     return;
   }
 
   loader.classList.remove("hidden");
-  imageDisplay.classList.add("loading");
-
-  // call the predict function of the backend
-  predictImage(imageDisplay.src);
+  
+  var canvas = document.createElement('canvas');
+  var ctx = canvas.getContext('2d');
+  var image = new Image();
+  image.src = imagePreview.src;
+  image.onload = function() {
+    canvas.width = image.width;
+    canvas.height = image.height;
+    ctx.drawImage(image, 0, 0);
+    var base64Image = canvas.toDataURL(getMimeType(imagePreview.src));
+    
+    predictImage(base64Image);
+  };
 }
 
 function clearImage() {
-  // reset selected files
-  fileSelect.value = "";
+  //Clear Image
+  console.log("Clear")
 
-  // remove image sources and hide them
+  fileSelect.value = "";
   imagePreview.src = "";
-  imageDisplay.src = "";
   predResult.innerHTML = "";
 
   hide(imagePreview);
-  hide(imageDisplay);
   hide(loader);
   hide(predResult);
   show(uploadCaption);
-
-  imageDisplay.classList.remove("loading");
 }
 
 function previewFile(file) {
-  // show the preview of the image
+  // Show preview of the uploaded image
   console.log(file.name);
-  var fileName = encodeURI(file.name);
 
   var reader = new FileReader();
   reader.readAsDataURL(file);
   reader.onloadend = () => {
     imagePreview.src = URL.createObjectURL(file);
-
     show(imagePreview);
     hide(uploadCaption);
-
-    // reset
     predResult.innerHTML = "";
-    imageDisplay.classList.remove("loading");
-
-    displayImage(reader.result, "image-display");
   };
 }
 
-//========================================================================
-// Helper functions
-//========================================================================
-
 function predictImage(image) {
+  // Send HTTP POST request to make prediction
   fetch("/predict", {
     method: "POST",
     headers: {
@@ -116,32 +112,24 @@ function predictImage(image) {
         });
     })
     .catch(err => {
-      console.log("An error occured", err.message);
+      console.log("An error occured.", err.message);
       window.alert("Oops! Something went wrong.");
     });
 }
 
-function displayImage(image, id) {
-  // display image on given id <img> element
-  let display = document.getElementById(id);
-  display.src = image;
-  show(display);
-}
-
 function displayResult(data) {
-  // display the result
-  // imageDisplay.classList.remove("loading");
+  // display the prediction result
   hide(loader);
   predResult.innerHTML = data.result;
   show(predResult);
 }
 
-function hide(el) {
+function hide(element) {
   // hide an element
-  el.classList.add("hidden");
+  element.classList.add("hidden");
 }
 
-function show(el) {
+function show(element) {
   // show an element
-  el.classList.remove("hidden");
+  element.classList.remove("hidden");
 }

@@ -13,20 +13,20 @@
         <h3>Bird Species Classifier</h3>
       </div>
     
-      <div class="panel" style="padding-top: 5rem;">
+      <div class="panel" style="padding-top: 2rem;">
         <input id="file-upload" class="hidden" type="file" accept="image/x-png,image/gif,image/jpeg" />
         <label for="file-upload" id="file-drag" class="upload-box">
-          <div id="upload-caption">Drop image here or click to select</div>
+          <div id="upload-caption">Drag an image here or <span id="upload-link">upload a file</span></div>
           <img id="image-preview" class="hidden" />
         </label>
       </div>
-      <div style="margin-bottom: 2rem;">
+      <div style="margin-bottom: 4rem;">
         <input type="button" value="Submit" class="button" onclick="submitImage();" />
         <input type="button" value="Clear" class="button" onclick="clearImage();" />
       </div>
     
-      <div id="image-box">
-        <img id="image-display" />
+      <div id="result">
+
         <div id="pred-result" class="hidden"></div>
         <svg id="loader" class="hidden" viewBox="0 0 32 32" width="32" height="32">
           <circle id="spinner" cx="16" cy="16" r="14" fill="none"></circle>
